@@ -4,14 +4,19 @@ from common.rpc_utils import get_connection
 
 
 def processar(body):
-    return {"resultado": body["a"] + body["b"]}
+    texto = body["texto"]
+    return {
+        "caracteres": len(texto),
+        "upper": texto.upper(),
+        "lower": texto.lower()
+    }
 
 
 def on_request(ch, method, props, body):
     data = json.loads(body.decode())
     resposta = processar(data)
 
-    print(f"[SOMA] Recebido: {data} -> Enviando {resposta}")
+    print(f"[LEITURA] Recebido: {data} -> Enviando: {resposta}")
 
     ch.basic_publish(
         exchange='',
@@ -23,19 +28,17 @@ def on_request(ch, method, props, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-# === Inicialização ===
 connection = get_connection()
 channel = connection.channel()
 
-channel.queue_declare(queue='rpc_soma')
-
+channel.queue_declare(queue="rpc_leitura")
 channel.basic_qos(prefetch_count=1)
 
 channel.basic_consume(
-    queue='rpc_soma',
+    queue="rpc_leitura",
     on_message_callback=on_request,
     auto_ack=False
 )
 
-print("[SOMA] Serviço ativo...")
+print("[LEITURA] Serviço ativo...")
 channel.start_consuming()
